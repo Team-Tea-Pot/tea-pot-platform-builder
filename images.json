@@ -1,0 +1,17 @@
+{
+  "services": {
+    "postgres": {
+      "deploy_image": "teapot/postgres",
+      "build_image": "teapot/postgres-builder"
+    },
+    "redis": {
+      "deploy_image": "teapot/redis",
+      "build_image": "teapot/redis-builder"
+    },
+    "user-service": {
+      "deploy_image": "teapot/user-service",
+      "build_image": "teapot/user-service-builder",
+      "note": "Uses pre-built binary from bin/server"
+    }
+  }
+}

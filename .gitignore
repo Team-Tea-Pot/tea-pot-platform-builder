@@ -1,0 +1,47 @@
+# Build artifacts
+test-results/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+vendor/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+!.env.example
+!.env.testing
+!.env.production
+
+# Docker
+.docker/
+
+# Repos (should be cloned)
+repos/*/
+
+# Keep repo structure
+!repos/.gitkeep

@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "TeaPot Database",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "teapot_users",
+      "Username": "teapot",
+      "SSLMode": "prefer",
+      "PassFile": "/tmp/pgpassfile"
+    }
+  }
+}

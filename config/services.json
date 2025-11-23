@@ -1,0 +1,25 @@
+{
+    "repositories": {
+        "user-service": {
+            "name": "teapot-user-service",
+            "url": "https://github.com/Team-Tea-Pot/teapot-user-service.git",
+            "path": "repos/teapot-user-service",
+            "default_branch": "main",
+            "env_var": "USER_SERVICE_BRANCH"
+        },
+        "api-specs": {
+            "name": "teapot-api-specs",
+            "url": "https://github.com/Team-Tea-Pot/teapot-api-specs.git",
+            "path": "repos/teapot-api-specs",
+            "default_branch": "main",
+            "env_var": "API_SPECS_BRANCH"
+        },
+        "supplier-app": {
+            "name": "supplier-app-ui",
+            "url": "https://github.com/Team-Tea-Pot/supplier-app-ui.git",
+            "path": "repos/supplier-app-ui",
+            "default_branch": "main",
+            "env_var": "SUPPLIER_APP_BRANCH"
+        }
+    }
+}

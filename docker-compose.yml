@@ -1,0 +1,133 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: teapot-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-teapot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-teapot123}
+      POSTGRES_DB: ${POSTGRES_DB:-teapot_users}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - teapot-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-teapot}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # User Service (Go Backend)
+  user-service:
+    image: teapot/user-service:${TAG:-latest}
+    build:
+      context: ./repos/teapot-user-service
+      dockerfile: ../../docker/user-service.Dockerfile
+    container_name: teapot-user-service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Server Configuration
+      PORT: 8080
+      ENV: ${ENV:-development}
+      
+      # Database Configuration
+      DATABASE_URL: postgres://${POSTGRES_USER:-teapot}:${POSTGRES_PASSWORD:-teapot123}@postgres:5432/${POSTGRES_DB:-teapot_users}?sslmode=disable
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER:-teapot}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-teapot123}
+      DB_NAME: ${POSTGRES_DB:-teapot_users}
+      DB_SSLMODE: disable
+      
+      # API Configuration
+      API_PREFIX: /api/v1
+      CORS_ENABLED: "true"
+      CORS_ORIGINS: "*"
+      
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
+      LOG_FORMAT: json
+    ports:
+      - "${USER_SERVICE_PORT:-8080}:8080"
+    volumes:
+      - ./repos/teapot-user-service:/app
+      - user-service-cache:/go/pkg/mod
+    networks:
+      - teapot-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  # pgAdmin - Database Management UI
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: teapot-pgadmin
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@teapot.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin123}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./docker/pgadmin-servers.json:/pgadmin4/servers.json
+    networks:
+      - teapot-network
+
+  # Integration Tests
+  integration-tests:
+    image: teapot/integration-tests:${TAG:-latest}
+    build:
+      context: ./repos/teapot-integration-tests
+      dockerfile: Dockerfile
+    container_name: teapot-integration-tests
+    depends_on:
+      user-service:
+        condition: service_healthy
+    environment:
+      API_BASE_URL: http://user-service:8080/api/v1
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER:-teapot}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-teapot123}
+      DB_NAME: ${POSTGRES_DB:-teapot_users}
+    volumes:
+      - ./repos/teapot-integration-tests/tests:/tests
+      - ./test-results:/test-results
+    networks:
+      - teapot-network
+    profiles:
+      - testing
+    command: pytest /tests -v --junitxml=/test-results/junit.xml --html=/test-results/report.html
+
+
+
+networks:
+  teapot-network:
+    driver: bridge
+    name: teapot-network
+
+volumes:
+  postgres_data:
+    name: teapot-postgres-data
+  pgadmin_data:
+    name: teapot-pgadmin-data
+  user-service-cache:
+    name: teapot-user-service-cache
+  flutter-cache:
+    name: teapot-flutter-cache
