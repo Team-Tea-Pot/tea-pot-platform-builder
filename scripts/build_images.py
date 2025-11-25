@@ -54,16 +54,21 @@ def build_deploy_image(name, image_name):
         return
     
     # Determine build context
-    # user-service needs to be built from its repo directory
     if name == 'user-service':
         context = ROOT / "repos/teapot-user-service"
-        # Generate code if Makefile exists
         makefile = context / "Makefile"
-        if makefile.exists():
-            print("Generating code for user-service...")
-            run("make generate", cwd=context, check=False)
         
-        # Use relative path to Dockerfile from repo root
+        # Build binary locally first
+        if makefile.exists():
+            print("Building user-service binary locally...")
+            run("make fetch-spec", cwd=context, check=False)
+            run("make generate", cwd=context, check=False)
+            run("make build", cwd=context, check=True)
+        else:
+            print("[ERROR] Makefile not found for user-service")
+            return
+        
+        # Build Docker image from repo directory (uses pre-built bin/server)
         dockerfile_rel = f"../../docker/{name}.Dockerfile"
         tag = f"{image_name}:latest"
         run(f"docker build -f {dockerfile_rel} -t {tag} .", cwd=context)
